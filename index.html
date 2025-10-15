@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Event Horizon - Your Premier Event Platform</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="Discover, create, and manage events with our advanced platform featuring dynamic pricing and secure blockchain-based ticketing."/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom styles for smooth transitions and better UX */
+    .modal { transition: opacity 0.3s ease, visibility 0.3s ease; }
+    .toast { transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased">
+
+  <header class="bg-white shadow-md sticky top-0 z-40">
+    <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-indigo-600">Event Horizon</h1>
+      <div class="flex items-center gap-4">
+        <button id="showVerifyModalBtn" class="text-sm font-medium text-gray-600 hover:text-indigo-600">Verify Ticket</button>
+        <button id="showCreateEventModalBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-semibold shadow-sm">Create Event</button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="container mx-auto px-6 py-8">
+    <section class="text-center py-16">
+      <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900">Find Your Next Unforgettable Experience</h2>
+      <p class="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">From concerts to conferences, discover events that match your passion or create your own with powerful management tools.</p>
+    </section>
+
+    <section id="eventsSection">
+      <h3 class="text-3xl font-bold mb-8 text-gray-900">Upcoming Events</h3>
+      <div id="eventsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="bg-white p-6 rounded-lg shadow-lg animate-pulse">
+            <div class="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-5/6"></div>
+            <div class="mt-6 border-t pt-4">
+                <div class="h-5 bg-gray-200 rounded w-1/2"></div>
+            </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <template id="eventCardTemplate">
+    <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col transform hover:-translate-y-1 transition-transform duration-300">
+      <h4 class="text-2xl font-bold text-gray-900 mb-2 truncate event-title"></h4>
+      <p class="text-sm text-gray-500 mb-4 event-time"></p>
+      <p class="description text-gray-600 flex-grow mb-6"></p>
+      <div class="sponsors-list mb-4"></div>
+      
+      <div class="border-t pt-4">
+        <h5 class="font-bold mb-2">Tickets</h5>
+        <div class="tiers-container space-y-4"></div>
+      </div>
+
+      <div class="mt-auto border-t pt-4">
+        <div class="text-lg font-bold">Total Collection: ₹<span class="total-collection">0.00</span></div>
+      </div>
+      
+      <div class="mt-4 border-t pt-4 flex gap-2">
+        <button class="view-bookings-btn bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg font-semibold w-full text-sm">View Bookings</button>
+        <button class="deleteBtn bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg font-semibold w-full text-sm">Delete Event</button>
+      </div>
+    </div>
+  </template>
+
+  <div id="modalBackdrop" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden"></div>
+
+  <div id="createEventModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <h2 class="text-2xl font-bold mb-6">Create New Event</h2>
+      <form id="createEventForm" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+        <input type="text" id="title" placeholder="Event Title" class="p-3 border rounded-lg md:col-span-2" required>
+        <textarea id="description" placeholder="Event Description" class="p-3 border rounded-lg md:col-span-2"></textarea>
+        <input type="text" id="location" placeholder="Location" class="p-3 border rounded-lg">
+        <input type="number" id="total_seats_for_event" placeholder="Total Seats for Event" class="p-3 border rounded-lg" min="1" required>
+        <input type="datetime-local" id="start_time" class="p-3 border rounded-lg" required>
+        <input type="datetime-local" id="end_time" class="p-3 border rounded-lg" required>
+        
+        <div class="md:col-span-2 border-t pt-4 mt-2">
+          <h3 class="text-lg font-semibold mb-2">Ticket Tiers</h3>
+          <div id="tiersContainer" class="space-y-2"></div>
+          <button type="button" id="addTierBtn" class="mt-2 bg-gray-200 text-sm text-gray-700 px-3 py-1 rounded-lg">Add Tier</button>
+          <button type="button" id="randomizeSeatsBtn" class="mt-2 bg-blue-100 text-sm text-blue-700 px-3 py-1 rounded-lg">Randomly Assign Seats</button>
+        </div>
+        
+        <div class="md:col-span-2 border-t pt-4 mt-2">
+          <h3 class="text-lg font-semibold mb-2">Link Sponsors</h3>
+          <div id="sponsorsContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+        </div>
+        
+        <div class="md:col-span-2 flex justify-end gap-4 mt-6">
+          <button type="button" class="close-modal-btn bg-gray-200 text-gray-800 px-4 py-2 rounded-lg">Cancel</button>
+          <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg">Create Event</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <div id="infoModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md">
+            <h2 id="infoModalTitle" class="text-2xl font-bold mb-4"></h2>
+            <div id="infoModalContent" class="text-gray-600 mb-6"></div>
+            <div id="infoModalActions" class="flex justify-end gap-4"></div>
+        </div>
+    </div>
+
+    <div id="bookingsModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold">Bookings for "<span id="bookingsModalTitle"></span>"</h2>
+          <button class="close-modal-btn text-3xl font-light">&times;</button>
+        </div>
+        <div id="bookingsModalContent"></div>
+      </div>
+    </div>
+
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-3"></div>
+
+  <script src="/static/main.js"></script>
+</body>
+</html>
