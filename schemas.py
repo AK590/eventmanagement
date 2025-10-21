@@ -54,6 +54,7 @@ class Event(EventBase):
 
 class EventDetail(Event):
     total_collection: float
+    average_rating: Optional[float] = None
 
 # --- Booking Schemas ---
 class BookingBase(BaseModel):
@@ -82,6 +83,26 @@ class BookingDetail(BaseModel):
     user_phone: str
     tier_name: str
 
+    class Config:
+        from_attributes = True
+
+# --- Rating Schemas ---
+class RatingBase(BaseModel):
+    rating: int
+    user_phone: str
+
+    @validator('rating')
+    def validate_rating(cls, v):
+        if not 1 <= v <= 5:
+            raise ValueError('Rating must be between 1 and 5.')
+        return v
+
+class RatingCreate(RatingBase):
+    pass
+
+class Rating(RatingBase):
+    id: int
+    event_id: int
     class Config:
         from_attributes = True
 
@@ -131,4 +152,3 @@ class Service(ServiceBase):
     event_id: int
     class Config:
         from_attributes = True
-
