@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bookTicket: (data) => api.request('/book', { method: 'POST', body: data }),
         verifyTicket: (hash) => api.request(`/verify/${hash}`),
         getPrice: (data) => api.request('/events/price', { method: 'POST', body: data }),
+        rateEvent: (eventId, data) => api.request(`/events/${eventId}/rate`, { method: 'POST', body: data }),
     };
 
     // --- UI Components & Utilities ---
@@ -131,6 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
             card.querySelector('.description').textContent = event.description || 'No description provided.';
             card.querySelector('.event-time').textContent = `${formatDate(event.start_time)} - ${formatDate(event.end_time)}`;
             card.querySelector('.total-collection').textContent = event.total_collection.toFixed(2);
+            card.querySelector('.average-rating').textContent = event.average_rating ? `${event.average_rating.toFixed(1)} / 5` : 'N/A';
             
             const sponsorsList = card.querySelector('.sponsors-list');
             if(event.sponsors && event.sponsors.length > 0) {
@@ -159,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             card.querySelector('.deleteBtn').addEventListener('click', () => handleDeleteEvent(event.id, event.title));
             card.querySelector('.view-bookings-btn').addEventListener('click', () => handleViewBookings(event.id, event.title));
+            card.querySelector('.rate-event-btn').addEventListener('click', () => handleRateEvent(event.id));
 
             tiersContainer.addEventListener('click', (e) => {
                 if (e.target.classList.contains('bookBtn')) {
@@ -344,6 +347,58 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast(error.message, 'error');
         }
     };
+
+    const handleRateEvent = (eventId) => {
+        const title = 'Rate this Event';
+        const content = `
+            <p class="mb-2">Please enter your 10-digit phone number to verify your booking.</p>
+            <input id="ratingPhoneInput" type="tel" pattern="\\d{10}" maxlength="10" class="p-2 border rounded-lg w-full mb-4" placeholder="1234567890" required>
+            <p class="mb-2">Select your rating:</p>
+            <div class="flex justify-center text-3xl">
+                ${[1, 2, 3, 4, 5].map(star => `<span class="rating-star cursor-pointer" data-rating="${star}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-gray-300"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.616.05.864.908.42 1.36l-4.224 3.882a.563.563 0 00-.162.521l1.17 5.25c.135.608-.563 1.075-1.126.745l-4.92-2.845a.563.563 0 00-.592 0l-4.92 2.845c-.563.33-1.261-.137-1.126-.745l1.17-5.25a.563.563 0 00-.162-.521L1.442 10.743c-.444-.452-.196-1.31.42-1.36l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
+                </span>`).join('')}
+            </div>
+        `;
+        const actions = `
+            <button class="close-modal-btn bg-gray-200 px-4 py-2 rounded-lg">Cancel</button>
+            <button id="confirmRatingBtn" class="bg-yellow-500 text-white px-4 py-2 rounded-lg" disabled>Submit Rating</button>
+        `;
+        showInfoModal(title, content, actions);
+
+        const filledStarSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-yellow-400"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.116 3.986 1.24 5.383c.294 1.282-1.056 2.287-2.185 1.686l-4.99-2.583-4.99 2.583c-1.13.602-2.479-.404-2.185-1.686l1.24-5.383-4.116-3.986c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd" /></svg>`;
+        const emptyStarSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-gray-300"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.616.05.864.908.42 1.36l-4.224 3.882a.563.563 0 00-.162.521l1.17 5.25c.135.608-.563 1.075-1.126.745l-4.92-2.845a.563.563 0 00-.592 0l-4.92 2.845c-.563.33-1.261-.137-1.126-.745l1.17-5.25a.563.563 0 00-.162-.521L1.442 10.743c-.444-.452-.196-1.31.42-1.36l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>`;
+
+        let selectedRating = 0;
+        const stars = document.querySelectorAll('.rating-star');
+        const confirmBtn = document.getElementById('confirmRatingBtn');
+
+        stars.forEach(star => {
+            star.addEventListener('click', () => {
+                selectedRating = parseInt(star.dataset.rating);
+                stars.forEach((s, index) => {
+                    s.innerHTML = (index + 1) <= selectedRating ? filledStarSvg : emptyStarSvg;
+                });
+                confirmBtn.disabled = false;
+            });
+        });
+
+        confirmBtn.addEventListener('click', async () => {
+            const phone = document.getElementById('ratingPhoneInput').value;
+            if (!/^\d{10}$/.test(phone)) {
+                showToast('Please enter a valid 10-digit phone number.', 'error');
+                return;
+            }
+            try {
+                await api.rateEvent(eventId, { user_phone: phone, rating: selectedRating });
+                showToast('Thank you for your feedback!', 'success');
+                closeModal(elements.infoModal);
+                initializeApp();
+            } catch (error) {
+                // Error toast is already shown by api.request
+            }
+        });
+    };
     
     const showInfoModal = (title, content, actions) => {
         document.getElementById('infoModalTitle').innerHTML = title;
@@ -449,4 +504,3 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- App Initialization ---
     initializeApp();
 });
-
