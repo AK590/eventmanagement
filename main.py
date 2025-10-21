@@ -48,6 +48,14 @@ def delete_event(event_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Event not found")
     return Response(status_code=204)
 
+# --- Rating Endpoint ---
+@app.post("/api/events/{event_id}/rate", response_model=schemas.Rating)
+def rate_event(event_id: int, rating: schemas.RatingCreate, db: Session = Depends(get_db)):
+    try:
+        return crud.create_event_rating(db, event_id=event_id, rating=rating)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 # --- Price & Booking Endpoints ---
 @app.post("/api/events/price", response_model=schemas.PriceResponse)
 def get_event_price(price_request: schemas.PriceRequest, db: Session = Depends(get_db)):
@@ -86,4 +94,3 @@ app.mount("/static", StaticFiles(directory=FRONTEND_DIRECTORY), name="static")
 @app.get("/")
 async def read_index():
     return FileResponse(os.path.join(FRONTEND_DIRECTORY, 'index.html'))
-
