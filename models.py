@@ -19,6 +19,7 @@ class User(Base):
     phone = Column(String(50), unique=True, index=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     bookings = relationship("Booking", back_populates="user")
+    ratings = relationship("Rating", back_populates="user")
 
 class Event(Base):
     __tablename__ = "events"
@@ -32,6 +33,7 @@ class Event(Base):
     services = relationship("Service", back_populates="event", cascade="all, delete-orphan")
     bookings = relationship("Booking", back_populates="event", cascade="all, delete-orphan")
     sponsors = relationship("Sponsor", secondary=event_sponsor_association, back_populates="events")
+    ratings = relationship("Rating", back_populates="event", cascade="all, delete-orphan")
 
 class Tier(Base):
     __tablename__ = "tiers"
@@ -77,3 +79,11 @@ class Booking(Base):
     event = relationship("Event", back_populates="bookings")
     tier = relationship("Tier", back_populates="bookings")
 
+class Rating(Base):
+    __tablename__ = "ratings"
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(Integer, ForeignKey("events.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    rating = Column(Integer)
+    event = relationship("Event", back_populates="ratings")
+    user = relationship("User", back_populates="ratings")
