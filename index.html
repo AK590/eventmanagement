@@ -48,7 +48,12 @@
 
   <template id="eventCardTemplate">
     <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col transform hover:-translate-y-1 transition-transform duration-300">
-      <h4 class="text-2xl font-bold text-gray-900 mb-2 truncate event-title"></h4>
+      
+      <div class="flex justify-between items-start mb-2">
+        <h4 class="text-2xl font-bold text-gray-900 truncate event-title mr-2"></h4>
+        <button class="rate-event-btn h-8 w-8 flex-shrink-0 flex items-center justify-center bg-gray-100 hover:bg-yellow-200 rounded-lg transition-colors text-xl">⭐</button>
+      </div>
+      
       <p class="text-sm text-gray-500 mb-4 event-time"></p>
       <p class="description text-gray-600 flex-grow mb-6"></p>
       <div class="sponsors-list mb-4"></div>
@@ -60,11 +65,12 @@
 
       <div class="mt-auto border-t pt-4">
         <div class="text-lg font-bold">Total Collection: ₹<span class="total-collection">0.00</span></div>
+        <div class="text-sm">Average Rating: <span class="average-rating">N/A</span></div>
       </div>
       
       <div class="mt-4 border-t pt-4 flex gap-2">
-        <button class="view-bookings-btn bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg font-semibold w-full text-sm">View Bookings</button>
-        <button class="deleteBtn bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg font-semibold w-full text-sm">Delete Event</button>
+        <button class="view-bookings-btn bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg font-semibold text-sm w-full">View Bookings</button>
+        <button class="deleteBtn bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg font-semibold text-sm w-full">Delete Event</button>
       </div>
     </div>
   </template>
@@ -103,22 +109,22 @@
   </div>
   
   <div id="infoModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md">
-            <h2 id="infoModalTitle" class="text-2xl font-bold mb-4"></h2>
-            <div id="infoModalContent" class="text-gray-600 mb-6"></div>
-            <div id="infoModalActions" class="flex justify-end gap-4"></div>
-        </div>
+    <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md">
+      <h2 id="infoModalTitle" class="text-2xl font-bold mb-4"></h2>
+      <div id="infoModalContent" class="text-gray-600 mb-6"></div>
+      <div id="infoModalActions" class="flex justify-end gap-4"></div>
     </div>
+  </div>
 
-    <div id="bookingsModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
-      <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-6">
-          <h2 class="text-2xl font-bold">Bookings for "<span id="bookingsModalTitle"></span>"</h2>
-          <button class="close-modal-btn text-3xl font-light">&times;</button>
-        </div>
-        <div id="bookingsModalContent"></div>
+  <div id="bookingsModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Bookings for "<span id="bookingsModalTitle"></span>"</h2>
+        <button class="close-modal-btn text-3xl font-light">&times;</button>
       </div>
+      <div id="bookingsModalContent"></div>
     </div>
+  </div>
 
   <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-3"></div>
 
