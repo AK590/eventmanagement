@@ -48,9 +48,11 @@ def list_events(db: Session, skip=0, limit=50):
     event_details = []
     for event in events:
         total_collection = db.query(func.sum(models.Booking.price_paid)).filter(models.Booking.event_id == event.id).scalar() or 0.0
+        average_rating = db.query(func.avg(models.Rating.rating)).filter(models.Rating.event_id == event.id).scalar()
         event_detail = schemas.EventDetail(
             **event.__dict__,
-            total_collection=total_collection
+            total_collection=total_collection,
+            average_rating=average_rating
         )
         event_details.append(event_detail)
     return event_details
@@ -181,3 +183,52 @@ def create_sponsor(db: Session, sponsor: schemas.SponsorCreate):
 def list_sponsors(db: Session):
     return db.query(models.Sponsor).all()
 
+# ======================================================================
+# THIS IS THE CORRECTED FUNCTION
+# ======================================================================
+def create_event_rating(db: Session, event_id: int, rating: schemas.RatingCreate):
+    user = db.query(models.User).filter(models.User.phone == rating.user_phone).first()
+    if not user:
+        raise ValueError("User with this phone number not found.")
+
+    booking = db.query(models.Booking).filter(
+        models.Booking.event_id == event_id,
+        models.Booking.user_id == user.id
+    ).first()
+
+    if not booking:
+        raise ValueError("You have not booked a ticket for this event.")
+
+    existing_rating = db.query(models.Rating).filter(
+        models.Rating.event_id == event_id,
+        models.Rating.user_id == user.id
+    ).first()
+
+    if existing_rating:
+        existing_rating.rating = rating.rating
+        db.commit()
+        db.refresh(existing_rating)
+        # Manually create the response to include the user's phone
+        return schemas.Rating(
+            id=existing_rating.id,
+            event_id=existing_rating.event_id,
+            rating=existing_rating.rating,
+            user_phone=user.phone
+        )
+
+    new_rating = models.Rating(
+        event_id=event_id,
+        user_id=user.id,
+        rating=rating.rating
+    )
+    db.add(new_rating)
+    db.commit()
+    db.refresh(new_rating)
+
+    # Manually create the response to include the user's phone
+    return schemas.Rating(
+        id=new_rating.id,
+        event_id=new_rating.event_id,
+        rating=new_rating.rating,
+        user_phone=user.phone
+    )
